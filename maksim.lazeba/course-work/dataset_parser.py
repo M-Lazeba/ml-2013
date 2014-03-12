@@ -37,12 +37,20 @@ def read_images_file(file_path):
     return images
 
 
-def extract_images():
+def extract_test_images():
     labels = read_labels_file("data/t10k-labels-idx1-ubyte")
     images = read_images_file("data/t10k-images-idx3-ubyte")
     if len(labels) != len(images):
         raise Exception('Number of images and labels differ')
-    return [(k, images[i]) for (i, k) in enumerate(labels)]
+    return [(i, label, images[i]) for (i, label) in enumerate(labels)]
+
+
+def extract_train_images():
+    labels = read_labels_file("data/train-labels-idx1-ubyte")
+    images = read_images_file("data/train-images-idx3-ubyte")
+    if len(labels) != len(images):
+        raise Exception('Number of images and labels differ')
+    return [(i, label, images[i]) for (i, label) in enumerate(labels)]
 
 
 def clear_dirs(path):
@@ -60,19 +68,19 @@ def clear_dirs(path):
 def save_images(folder_path, images):
     folder_path = clear_dirs(folder_path)
     from PIL import Image, ImageDraw
-    for i, image in enumerate(images[:10]):
-        size = (len(image[1]), len(image[1][0]))
+    for i, l, image in images[:10]:
+        size = (len(image), len(image[0]))
         img = Image.new('RGB', size)
         img_drawer = ImageDraw.Draw(img)
-        for y, row in enumerate(image[1]):
+        for y, row in enumerate(image):
             for x, value in enumerate(row):
                 img_drawer.point((x, y), (value, value, value))
-        img.save(folder_path + "/" + str(i) + "_" + str(image[0]) + ".png")
+        img.save(folder_path + "/" + str(i) + "_" + str(l) + ".png")
 
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv[0]) == 0:
+    if len(sys.argv) == 1:
         print "choose folder where to extract images"
         sys.exit(1)
-    save_images(sys.argv[0], extract_images())
+    save_images(sys.argv[1], extract_train_images())

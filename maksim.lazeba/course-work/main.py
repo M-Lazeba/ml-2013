@@ -1,37 +1,87 @@
 __author__ = 'max'
 
 from network import Network
-
-data = [[0, 0], [0, 1], [1, 0], [1, 1]]
-ans1 = [[0], [1], [1], [1]]  # or
-ans2 = [[0], [0], [0], [1]]  # and
-
-max_iter = 100
+import pickle
+import os
 
 
-def train_net(net, input_set, output_set, max_iter):
-    for i in xrange(max_iter):
-        for k, x in enumerate(input_set):
-            net.train((x, output_set[k]))
+def train_step(net, train_set):
+    for i, x, y in train_set:
+        net.train((x, y))
 
-#net1 = Network([2, 4, 1], mu=0.1)
-#train_net(net1, data, ans1, 5000)
-#print "OR results"
-#for x in data:
-#    print(x, net1.calc(x))
-#
-#net2 = Network([2, 1], mu=0.1)
-#train_net(net2, data, ans2, 5000)
-#print "AND results"
-#for x in data:
-#    print(x, net2.calc(x))
 
-#net3 = Network([2, 4, 1], mu=0.1)
-#import random
-#data = [(random.gauss(0.5, 0.1), random.gauss(0, 0.1)) for x in xrange(10)]
-#ans3 = [(x + y,) for x, y in data]
-#train_net(net3, data, ans3, 5000)
+def test_step(net, test_set):
+    results = []
+    for i, x, y in test_set:
+        res = net.calc(x)
+        s = sum(res)
+        probs = [float(q) / s for q in res]
+        results.append(probs)
+    return results
 
-#print "PLUS results"
-#for x in data:
-#    print(x, net3.calc(x)[0] - x[0] + x[1])
+
+def create_dirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+def save_results(net_type, mu, step, net, results):
+    path = create_dirs(os.path.join('results', net_type, mu, step))
+    with open(os.path.join(path, 'net'), mode='w') as net_file:
+        pickle.dump(net, net_file)
+    with open(os.path.join(path, 'res'), mode='w') as res_file:
+        pickle.dump(results, res_file)
+
+
+def train_net(net, train_set, test_set, iterations):
+    for i in xrange(iterations):
+        train_step(net, train_set)
+        results = test_step(net, test_set)
+        save_results(net.type, str(net.mu), str(i+1), net, results)
+        print "iteration %s over net %s successfully ended, results was saved" % (i, net.type)
+
+
+def process_images_to_inputs(dataset):
+    def process((i, l, im)):
+        pixels = []
+        for row in im:
+            for p in row:
+                pixels.append(float(p) / 255)
+        ans = [0.] * 10
+        ans[l] = 1.
+        return i, pixels, ans
+    return map(process, dataset)
+
+
+def start(configurations, mus, steps):
+    from dataset_parser import extract_test_images, extract_train_images
+    test = process_images_to_inputs(extract_test_images())
+    # train = process_images_to_inputs(extract_train_images())
+    train = test
+    inputs = len(test[0][1])
+    outputs = len(test[0][2])
+    print "All data read, start training"
+    for hidden in configurations:
+        for mu in mus:
+            net = Network([inputs] + hidden + [outputs], mu=mu)
+            train_net(net, train, test, steps)
+
+
+def main():
+    import sys
+    if len(sys.argv) == 4:
+        conf = [int(l) for l in sys.argv[1].split(',')]
+        configurations = [conf]
+        mus = [float(sys.argv[2])]
+        steps = int(sys.argv[3])
+        print configurations, mus, steps
+    else:
+        configurations = [[400], [200, 200], [200, 100, 50]]
+        mus = [0.1]
+        steps = 100
+    start(configurations, mus, steps)
+
+
+if __name__ == '__main__':
+    main()
