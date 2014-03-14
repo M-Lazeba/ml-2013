@@ -8,10 +8,12 @@ import java.util.*;
  * Created by max on 3/12/14.
  */
 public class Network {
+    public static final int HIDDEN_INPUT_INDEX = 0;
     private ArrayList<Perceptron> perceptrons = new ArrayList<Perceptron>();
     private double mu = 0;
     private ArrayList<Perceptron> inputs = new ArrayList<Perceptron>();
     private ArrayList<Perceptron> outputs = new ArrayList<Perceptron>();
+    private Perceptron hiddenInput;
 
 
     private Network(double mu) {
@@ -25,6 +27,7 @@ public class Network {
         for (Perceptron p : perceptrons){
             p.clear();
         }
+        hiddenInput.value = 1.0;
         for (int i = 0; i < xs.length; i++){
             inputs.get(i).value = xs[i];
         }
@@ -49,7 +52,15 @@ public class Network {
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
-        sb.append(perceptrons.size()).append(" ").append(inputs.size()).append(" ").append(outputs.size()).append("\n");
+        sb.append(perceptrons.size()).append("\n").append(inputs.size()).append("\n");
+        for (Perceptron p : inputs){
+            sb.append(p.id).append(" ");
+        }
+        sb.append("\n").append(outputs.size()).append("\n");
+        for (Perceptron p : outputs){
+            sb.append(p.id).append(" ");
+        }
+        sb.append("\n");
         for (Perceptron p : perceptrons){
             sb.append(p.id).append(" ").append(p.inputs.size()).append(" ");
             for (int i : p.inputs.keySet()){
@@ -72,17 +83,20 @@ public class Network {
         int outputsCount = Integer.valueOf(s2[s2.length - 1]);
 
         Network net = new Network(mu);
+        net.hiddenInput = net.new Perceptron();
         for (int in = 0; in < inputsCount; in++){
             net.inputs.add(net.new Perceptron());
         }
         List<Perceptron> prev = net.inputs;
+        Random random = new Random(42);
         for (int l : hiddenLayers){
             List<Perceptron> layer = new ArrayList<Perceptron>();
             for (int i = 0; i < l; i++){
                 Perceptron p = net.new Perceptron();
                 layer.add(p);
+                p.joinTo(net.hiddenInput.id, random.nextGaussian());
                 for (Perceptron in : prev){
-                    p.joinTo(in.id);
+                    p.joinTo(in.id, random.nextGaussian());
                 }
             }
             prev = layer;
@@ -91,7 +105,7 @@ public class Network {
             Perceptron p = net.new Perceptron();
             net.outputs.add(p);
             for (Perceptron in : prev){
-                p.joinTo(in.id);
+                p.joinTo(in.id, random.nextGaussian());
             }
         }
         return net;
@@ -103,26 +117,34 @@ public class Network {
         try (Scanner in = new Scanner(fullPath)){
             int ps = in.nextInt();
             int inputs = in.nextInt();
-            int outputs = in.nextInt();
             Network net = new Network(mu);
+            Set<Integer> inputPercs = new HashSet<>();
+            for (int i = 0; i < inputs; i++){
+                inputPercs.add(in.nextInt());
+            }
+            int outputs = in.nextInt();
+            Set<Integer> outputPercs = new HashSet<>();
+            for (int i = 0; i < outputs; i++){
+                outputPercs.add(in.nextInt());
+            }
             for (int i = 0; i < ps; i++){
                 int id = in.nextInt();
                 int k = in.nextInt();
                 Perceptron p = net.new Perceptron();
                 for (int j = 0; j < k; j++){
                     int pIn = in.nextInt();
-                    p.joinTo(pIn);
-                    p.inputs.put(pIn, in.nextDouble());
+                    p.joinTo(pIn, in.nextDouble());
                 }
-                if (i < inputs){
+                if (id == HIDDEN_INPUT_INDEX){
+                    net.hiddenInput = p;
+                }
+                if (inputPercs.contains(id)){
                     net.inputs.add(p);
                 }
-                if (i >= ps - outputs){
+                if (outputPercs.contains(id)){
                     net.outputs.add(p);
                 }
             }
-
-
             return net;
         }
     }
@@ -151,11 +173,11 @@ public class Network {
             return value;
         }
 
-        public void joinTo(int pId){
+        public void joinTo(int pId, double weight){
             if (id <= pId){
                 throw  new IllegalArgumentException();
             }
-            inputs.put(pId, Math.random() - 0.5);
+            inputs.put(pId, weight);
             perceptrons.get(pId).outputs.add(id);
         }
 
