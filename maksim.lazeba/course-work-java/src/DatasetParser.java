@@ -34,7 +34,11 @@ public class DatasetParser {
             inImages.readFully(pixels);
             double[] input = new double[pixels.length];
             for (int j = 0; j < input.length; j++){
-                input[j] = ((double)pixels[j]) / 255;
+                int p = pixels[j];
+                if (p < 0){
+                    p += 256;
+                }
+                input[j] = ((double)p) / 256;
             }
             double[] output = new double[10];
             Arrays.fill(output, 0);

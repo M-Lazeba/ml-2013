@@ -8,12 +8,12 @@ import java.util.*;
  * Created by max on 3/12/14.
  */
 public class Network {
-    public static final int HIDDEN_INPUT_INDEX = 0;
+//    public static final int HIDDEN_INPUT_INDEX = 0;
     private ArrayList<Perceptron> perceptrons = new ArrayList<Perceptron>();
     private double mu = 0;
     private ArrayList<Perceptron> inputs = new ArrayList<Perceptron>();
     private ArrayList<Perceptron> outputs = new ArrayList<Perceptron>();
-    private Perceptron hiddenInput;
+//    private Perceptron hiddenInput;
 
 
     private Network(double mu) {
@@ -27,7 +27,7 @@ public class Network {
         for (Perceptron p : perceptrons){
             p.clear();
         }
-        hiddenInput.value = 1.0;
+//        hiddenInput.value = 1.0;
         for (int i = 0; i < xs.length; i++){
             inputs.get(i).value = xs[i];
         }
@@ -83,7 +83,7 @@ public class Network {
         int outputsCount = Integer.valueOf(s2[s2.length - 1]);
 
         Network net = new Network(mu);
-        net.hiddenInput = net.new Perceptron();
+//        net.hiddenInput = net.new Perceptron();
         for (int in = 0; in < inputsCount; in++){
             net.inputs.add(net.new Perceptron());
         }
@@ -94,7 +94,7 @@ public class Network {
             for (int i = 0; i < l; i++){
                 Perceptron p = net.new Perceptron();
                 layer.add(p);
-                p.joinTo(net.hiddenInput.id, random.nextGaussian());
+//                p.joinTo(net.hiddenInput.id, random.nextGaussian());
                 for (Perceptron in : prev){
                     p.joinTo(in.id, random.nextGaussian());
                 }
@@ -135,9 +135,9 @@ public class Network {
                     int pIn = in.nextInt();
                     p.joinTo(pIn, in.nextDouble());
                 }
-                if (id == HIDDEN_INPUT_INDEX){
-                    net.hiddenInput = p;
-                }
+//                if (id == HIDDEN_INPUT_INDEX){
+//                    net.hiddenInput = p;
+//                }
                 if (inputPercs.contains(id)){
                     net.inputs.add(p);
                 }

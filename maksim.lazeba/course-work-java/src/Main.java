@@ -13,8 +13,8 @@ import java.util.concurrent.Executors;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        int trainSize = System.getProperty("trainSet") == null ? 4000 : Integer.parseInt(System.getProperty("trainSet"));
-        int testSize = System.getProperty("testSet") == null ? 1000 : Integer.parseInt(System.getProperty("testSet"));
+        int trainSize = System.getProperty("trainSet") == null ? 400 : Integer.parseInt(System.getProperty("trainSet"));
+        int testSize = System.getProperty("testSet") == null ? 100 : Integer.parseInt(System.getProperty("testSet"));
         System.out.println("train: " + trainSize + " tests: " + testSize);
         List<TestCase> train = DatasetParser.getTrainSet(args[0], trainSize);
         List<TestCase> test = DatasetParser.getTestSet(args[0], testSize);
@@ -25,7 +25,24 @@ public class Main {
             folder = "results";
         System.out.println("Save results to " + folder);
         for (int i = 2; i < args.length; i++){
-            executor.submit(new Trainer(args[i], train, test, folder));
+            executor.submit(new Trainer(args[i], train, test, folder, new Tester.CorrectnessTest() {
+                @Override
+                public boolean test(double[] rightAnswer, double[] netAnswer) {
+                    int resValue = 0;
+                    for (int i = 0; i < netAnswer.length; i++){
+                        if (netAnswer[i] > netAnswer[resValue]){
+                            resValue = i;
+                        }
+                    }
+                    int ansValue = 0;
+                    for (int i = 0; i < rightAnswer.length; i++){
+                        if (rightAnswer[i] > rightAnswer[ansValue]){
+                            ansValue = i;
+                        }
+                    }
+                    return ansValue == resValue;
+                }
+            }));
         }
     }
 

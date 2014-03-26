@@ -9,18 +9,21 @@ import java.util.List;
  * Created by max on 3/14/14.
  */
 class Trainer implements Runnable{
-    public static final int MAX_ITERATIONS = Integer.MAX_VALUE;
+    public static int MAX_ITERATIONS = Integer.MAX_VALUE;
+    public static int NET_SAVE_PERIOD = 5;
     private final List<TestCase> trainSet;
     private final List<TestCase> testSet;
     private final String pathPrefix;
     private final String netConfig;
+    private final Tester.CorrectnessTest correctnessTest;
     private int iteration;
 
-    Trainer(String netConfig, List<TestCase> trainSet, List<TestCase> testSet, String pathPrefix) {
+    Trainer(String netConfig, List<TestCase> trainSet, List<TestCase> testSet, String pathPrefix, Tester.CorrectnessTest correctnessTest) {
         this.trainSet = trainSet;
         this.testSet = testSet;
         this.pathPrefix = pathPrefix;
         this.netConfig = netConfig;
+        this.correctnessTest = correctnessTest;
     }
 
     @Override
@@ -33,7 +36,7 @@ class Trainer implements Runnable{
                 trainIteration(network);
                 System.out.println(String.format("Start %d iteration testing %s", iteration, netConfig));
                 List<Result> results = testIteration(network);
-                System.out.println(String.format("Saving %d iteration results %s", iteration, netConfig));
+                System.out.println(String.format("Saving %d iteration results %s. Error rate = %f", iteration, netConfig, Tester.calcErrorRate(results, correctnessTest)));
                 save(network, results);
                 System.out.println(String.format("Iteration %d for %s successfully ended", iteration, netConfig));
             }
@@ -90,9 +93,9 @@ class Trainer implements Runnable{
         int d = n / 100;
         for (TestCase testCase : trainSet){
             network.train(testCase.getXs(), testCase.getYs());
-            if (i % d == 0){
-                System.out.println(String.format("Training iteration %d, net %s, %d%% completed", iteration, netConfig, i * 100 / n));
-            }
+//            if (i % d == 0){
+//                System.out.println(String.format("Training iteration %d, net %s, %d%% completed", iteration, netConfig, i * 100 / n));
+//            }
             i++;
         }
     }
@@ -101,7 +104,9 @@ class Trainer implements Runnable{
         Path folder = Paths.get(pathPrefix, netConfig, String.valueOf(iteration));
         folder.toFile().mkdirs();
         saveResults(results, folder.resolve("res.txt").toFile());
-        saveNetwork(net, folder.resolve("net.txt").toFile());
+        if (iteration % NET_SAVE_PERIOD == 0) {
+            saveNetwork(net, folder.resolve("net.txt").toFile());
+        }
     }
 
     private void saveResults(List<Result> results, File f) throws FileNotFoundException {
@@ -119,9 +124,9 @@ class Trainer implements Runnable{
         }
     }
 
-    private static class Result{
-        private final TestCase testCase;
-        private final double[] ans;
+    public static class Result{
+        public final TestCase testCase;
+        public final double[] ans;
 
         private Result(TestCase testCase, double[] ans) {
             this.testCase = testCase;
